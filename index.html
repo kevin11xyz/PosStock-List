@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stocklist </title>
+  <link rel="stylesheet" href="SL.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 1100px;
+      margin: auto;
+      background: #9cd2f1;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    input[type="text"], input[type="number"] {
+      padding: 5px;
+      font-size: 14px;
+      width: 90%;
+    }
+    #searchInput {
+      margin-bottom: 20px;
+      padding: 10px;
+      width: 300px;
+      font-size: 16px;
+    }
+    button {
+      padding: 5px 10px;
+      margin: 2px;
+      font-size: 14px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .edit-btn {
+      background-color: #f39c12;
+      color: white;
+    }
+    .save-btn {
+      background-color: #2ecc71;
+      color: white;
+    }
+    th {
+      background-color: #3498db;
+      color: white;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Stocklist</h2>
+  <input type="text" id="searchInput" placeholder="Search by Item or Supplier" onkeyup="filterTable()">
+
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Price</th>
+        <th>Quantity</th>
+        <th>Supplier</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="stocklistTableBody"></tbody>
+  </table>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCddKRuTHpHtaQ0rLOkMOAb5q6slJ3-ybs",
+    authDomain: "project-29b6a.firebaseapp.com",
+    databaseURL: "https://project-29b6a-default-rtdb.firebaseio.com",
+    projectId: "project-29b6a",
+    storageBucket: "project-29b6a.firebasestorage.app",
+    messagingSenderId: "731238594321",
+    appId: "1:731238594321:web:71c168ad6f35df2944feb0"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const stocklistRef = db.ref("stocklist");
+
+  function loadStocklist() {
+    stocklistRef.on("value", (snapshot) => {
+      const data = snapshot.val();
+      const tbody = document.getElementById("stocklistTableBody");
+      tbody.innerHTML = "";
+
+      if (data) {
+        Object.entries(data).forEach(([key, item]) => {
+          tbody.innerHTML += `
+            <tr id="row-${key}">
+              <td>${item.ItemName}</td>
+              <td><input type="number" id="price-${key}" value="${item.Price}"></td>
+              <td><input type="number" id="quantity-${key}" value="${item.Quantity}"></td>
+              <td><input type="text" id="supplier-${key}" value="${item.Supplier}"></td>
+              <td>
+                <button class="save-btn" onclick="saveChanges('${key}')">Save</button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+    });
+  }
+
+  function saveChanges(key) {
+    const price = document.getElementById(`price-${key}`).value;
+    const quantity = document.getElementById(`quantity-${key}`).value;
+    const supplier = document.getElementById(`supplier-${key}`).value;
+
+    db.ref(`stocklist/${key}`).update({
+      Price: price,
+      Quantity: quantity,
+      Supplier: supplier
+    }).then(() => {
+      alert("Updated successfully!");
+    }).catch((error) => {
+      alert("Update failed: " + error.message);
+    });
+  }
+
+  function filterTable() {
+    const input = document.getElementById("searchInput").value.toLowerCase();
+    const rows = document.querySelectorAll("#stocklistTableBody tr");
+
+    rows.forEach(row => {
+      const item = row.cells[0].textContent.toLowerCase();
+      const supplier = row.cells[3].querySelector("input").value.toLowerCase();
+
+      if (item.includes(input) || supplier.includes(input)) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    });
+  }
+
+  window.onload = loadStocklist;
+</script>
+
+</body>
+</html>
